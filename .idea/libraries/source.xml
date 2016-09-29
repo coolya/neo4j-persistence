@@ -1,0 +1,10 @@
+<component name="libraryTable">
+  <library name="source">
+    <CLASSES />
+    <JAVADOC />
+    <SOURCES>
+      <root url="file://$PROJECT_DIR$/../MPS/core/kernel/source" />
+      <root url="file://$PROJECT_DIR$/../MPS/core/kernel/source_gen" />
+    </SOURCES>
+  </library>
+</component>
