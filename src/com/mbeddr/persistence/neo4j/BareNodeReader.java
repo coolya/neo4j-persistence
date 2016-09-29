@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package jetbrains.mps.persistence.binary;
+package com.mbeddr.persistence.neo4j;
 
 import jetbrains.mps.extapi.model.SModelData;
 import jetbrains.mps.smodel.DynamicReference;
@@ -38,7 +38,7 @@ import java.util.List;
 
 /**
  * Lightweight, straightforward binary serialization of individual {@link org.jetbrains.mps.openapi.model.SNode}s.
- * @see jetbrains.mps.persistence.binary.BareNodeWriter
+ * @see BareNodeWriter
  * @author Artem Tikhomirov
  */
 public class BareNodeReader {

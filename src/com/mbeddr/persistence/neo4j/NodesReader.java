@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package jetbrains.mps.persistence.binary;
+package com.mbeddr.persistence.neo4j;
 
 import jetbrains.mps.smodel.InterfaceSNode;
 import jetbrains.mps.util.io.ModelInputStream;

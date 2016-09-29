@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package jetbrains.mps.persistence.binary;
+package com.mbeddr.persistence.neo4j;
 
 import jetbrains.mps.extapi.model.GeneratableSModel;
 import jetbrains.mps.generator.ModelDigestUtil;
@@ -151,7 +151,7 @@ public final class BinaryPersistence {
       os = ModelDigestUtil.createDigestBuilderOutputStream();
       try {
         ModelOutputStream mos = new ModelOutputStream(os);
-        new jetbrains.mps.persistence.binary.NodesWriter(model.getReference(), mos, meta).writeNode(node);
+        new NodesWriter(model.getReference(), mos, meta).writeNode(node);
         mos.flush();
       } catch (IOException ignored) {
         assert false;
@@ -245,7 +245,7 @@ public final class BinaryPersistence {
     IdInfoRegistry meta = bp.saveModelProperties(os);
 
     Collection<SNode> roots = IterableUtil.asCollection(model.getRootNodes());
-    new jetbrains.mps.persistence.binary.NodesWriter(model.getReference(), os, meta).writeNodes(roots);
+    new NodesWriter(model.getReference(), os, meta).writeNodes(roots);
   }
 
   private BinaryPersistence(@NotNull MetaModelInfoProvider mmiProvider, SModel modelData) {

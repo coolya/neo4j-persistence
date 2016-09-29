@@ -1,0 +1,22 @@
+<!DOCTYPE idea-plugin PUBLIC "Plugin/DTD" "http://plugins.intellij.net/plugin.dtd">
+<idea-plugin>
+    <id>com.mbeddr.persistence.neo4j</id>
+    <name>Neo4j persistence for MPS</name>
+    <description>Provides Neo4j persistence support for MPS</description>
+    <version>0.1</version>
+    <vendor url="http://www.jetbrains.com/mps/" logo="/MPS_16.png">JetBrains</vendor>
+    <idea-version since-build="145.1" until-build="163.1"/>
+
+    <depends>jetbrains.mps.core</depends>
+    <depends>com.intellij.modules.mps</depends>
+
+    <application-components>
+        <!--api-->
+        <component>
+            <implementation-class>com.mbeddr.persistence.BinaryModelPersistence</implementation-class>
+        </component>
+
+    </application-components>
+
+
+</idea-plugin>

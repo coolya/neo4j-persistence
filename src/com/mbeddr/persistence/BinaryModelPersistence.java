@@ -13,16 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package jetbrains.mps.persistence;
+package com.mbeddr.persistence;
 
-import jetbrains.mps.components.CoreComponent;
+import com.intellij.openapi.components.ApplicationComponent;
 import jetbrains.mps.extapi.model.GeneratableSModel;
 import jetbrains.mps.extapi.model.SModelBase;
 import jetbrains.mps.extapi.model.SModelData;
 import jetbrains.mps.generator.ModelDigestUtil;
+import jetbrains.mps.persistence.IndexAwareModelFactory;
+import jetbrains.mps.persistence.LazyLoadFacility;
+import jetbrains.mps.persistence.MetaModelInfoProvider;
 import jetbrains.mps.persistence.MetaModelInfoProvider.RegularMetaModelInfo;
 import jetbrains.mps.persistence.MetaModelInfoProvider.StuffedMetaModelInfo;
-import jetbrains.mps.persistence.binary.BinaryPersistence;
+import com.mbeddr.persistence.neo4j.BinaryPersistence;
+import jetbrains.mps.persistence.ModelDigestHelper;
 import jetbrains.mps.project.MPSExtentions;
 import jetbrains.mps.smodel.DefaultSModelDescriptor;
 import jetbrains.mps.smodel.SModelHeader;
@@ -44,22 +48,8 @@ import java.util.Map;
 /**
  * evgeny, 11/20/12
  */
-public class BinaryModelPersistence implements CoreComponent, ModelFactory, IndexAwareModelFactory {
-  private final PersistenceFacade myFacade;
-
-  BinaryModelPersistence(@NotNull PersistenceFacade facade) {
-    myFacade = facade;
-  }
-
-  @Override
-  public void init() {
-    myFacade.setModelFactory(MPSExtentions.MODEL_BINARY, this);
-  }
-
-  @Override
-  public void dispose() {
-    myFacade.setModelFactory(MPSExtentions.MODEL_BINARY, null);
-  }
+public class BinaryModelPersistence implements ApplicationComponent, ModelFactory, IndexAwareModelFactory {
+  private static final String MODEL_NEO4J = "neo4j";
 
   @NotNull
   @Override
@@ -178,6 +168,22 @@ public class BinaryModelPersistence implements CoreComponent, ModelFactory, Inde
     final ModelFactory modelFactory = PersistenceFacade.getInstance().getModelFactory(MPSExtentions.MODEL_BINARY);
     assert modelFactory instanceof BinaryModelPersistence;
     return new DefaultSModelDescriptor(new PersistenceFacility((BinaryModelPersistence) modelFactory, dataSource), header.createCopy());
+  }
+
+  @NotNull
+  @Override
+  public String getComponentName() {
+    return this.getClass().getSimpleName();
+  }
+
+  @Override
+  public void initComponent() {
+    PersistenceFacade.getInstance().setModelFactory(MODEL_NEO4J, this);
+  }
+
+  @Override
+  public void disposeComponent() {
+    PersistenceFacade.getInstance().setModelFactory(MODEL_NEO4J, null);
   }
 
   private static class PersistenceFacility extends LazyLoadFacility {
