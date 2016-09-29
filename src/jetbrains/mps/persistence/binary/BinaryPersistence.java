@@ -151,7 +151,7 @@ public final class BinaryPersistence {
       os = ModelDigestUtil.createDigestBuilderOutputStream();
       try {
         ModelOutputStream mos = new ModelOutputStream(os);
-        new NodesWriter(model.getReference(), mos, meta).writeNode(node);
+        new jetbrains.mps.persistence.binary.NodesWriter(model.getReference(), mos, meta).writeNode(node);
         mos.flush();
       } catch (IOException ignored) {
         assert false;
@@ -245,7 +245,7 @@ public final class BinaryPersistence {
     IdInfoRegistry meta = bp.saveModelProperties(os);
 
     Collection<SNode> roots = IterableUtil.asCollection(model.getRootNodes());
-    new NodesWriter(model.getReference(), os, meta).writeNodes(roots);
+    new jetbrains.mps.persistence.binary.NodesWriter(model.getReference(), os, meta).writeNodes(roots);
   }
 
   private BinaryPersistence(@NotNull MetaModelInfoProvider mmiProvider, SModel modelData) {
