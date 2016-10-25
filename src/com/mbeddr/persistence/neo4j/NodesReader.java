@@ -31,14 +31,13 @@ import java.io.IOException;
 import java.util.Collection;
 
 public final class NodesReader extends BareNodeReader {
-  private final ReadHelper myReadHelper;
+
   private boolean hasSkippedNodes = false;
   private Collection<SNodeId> myExternalRefs;
   private Collection<SNodeId> myLocalRefs;
 
-  public NodesReader(@NotNull SModelReference modelReference, @NotNull ModelInputStream is, ReadHelper readHelper) {
+  public NodesReader(@NotNull SModelReference modelReference, @NotNull ModelInputStream is) {
     super(modelReference, is);
-    myReadHelper = readHelper;
   }
 
   /*package*/ void collectExternalTargets(@Nullable Collection<SNodeId> store) {
@@ -54,14 +53,12 @@ public final class NodesReader extends BareNodeReader {
 
   @Override
   protected SNode instantiate(@Nullable SNode parent) throws IOException {
-    SConcept concept = myReadHelper.readConcept(myIn.readShort());
+    SConcept concept = null;
     SNodeId nodeId = myIn.readNodeId();
-    SContainmentLink link = myReadHelper.readAggregation(myIn.readShort());
+    SContainmentLink link = null;
 
     boolean interfaceNode = false;
-    if (myReadHelper.isRequestedInterfaceOnly()) {
-      interfaceNode = myReadHelper.isInterface(concept) || link == null;
-    }
+
     // TODO report if (nodeInfo != 0 && myEnv != null) .. myEnv.nodeRoleRead/conceptRead();
 
     jetbrains.mps.smodel.SNode node = interfaceNode ? new InterfaceSNode(concept, nodeId) : new jetbrains.mps.smodel.SNode(concept, nodeId);
@@ -96,7 +93,7 @@ public final class NodesReader extends BareNodeReader {
   protected void readReferences(SNode node) throws IOException {
     int refs = myIn.readShort();
     while (refs-- > 0) {
-      final SReferenceLink link = myReadHelper.readAssociation(myIn.readShort());
+      final SReferenceLink link = null;
       readReference(link, node);
     }
   }
@@ -105,7 +102,7 @@ public final class NodesReader extends BareNodeReader {
   protected void readProperties(SNode node) throws IOException {
     int properties = myIn.readShort();
     while (properties-- > 0) {
-      final SProperty property = myReadHelper.readProperty(myIn.readShort());
+      final SProperty property = null;
       final String value = myIn.readString();
       node.setProperty(property, value);
     }

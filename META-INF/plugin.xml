@@ -13,7 +13,7 @@
     <application-components>
         <!--api-->
         <component>
-            <implementation-class>com.mbeddr.persistence.BinaryModelPersistence</implementation-class>
+            <implementation-class>com.mbeddr.persistence.Neo4JModelPersistence</implementation-class>
         </component>
 
     </application-components>

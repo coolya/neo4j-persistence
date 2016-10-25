@@ -223,10 +223,9 @@ public final class BinaryPersistence {
 
       DefaultSModel model = new DefaultSModel(modelHeader.getModelReference(), modelHeader);
       BinaryPersistence bp = new BinaryPersistence(mmiProvider == null ? new RegularMetaModelInfo(modelHeader.getModelReference()) : mmiProvider, model);
-      ReadHelper rh = bp.loadModelProperties(mis);
-      rh.requestInterfaceOnly(interfaceOnly);
 
-      NodesReader reader = new NodesReader(modelHeader.getModelReference(), mis, rh);
+
+      NodesReader reader = new NodesReader(modelHeader.getModelReference(), mis);
       reader.readNodesInto(model);
       return new ModelLoadResult((SModel) model, reader.hasSkippedNodes() ? ModelLoadingState.INTERFACE_LOADED : ModelLoadingState.FULLY_LOADED);
     } finally {
@@ -251,26 +250,6 @@ public final class BinaryPersistence {
   private BinaryPersistence(@NotNull MetaModelInfoProvider mmiProvider, SModel modelData) {
     myMetaInfoProvider = mmiProvider;
     myModelData = modelData;
-  }
-
-  private ReadHelper loadModelProperties(ModelInputStream is) throws IOException {
-    final ReadHelper readHelper = loadRegistry(is);
-
-    loadUsedLanguages(is);
-
-    for (SModuleReference ref : loadModuleRefList(is)) {
-      // FIXME add temporary code to read both module ref and SLanguage in 3.4 (write SLangugae, read both)
-      new SModelLegacy(myModelData).addEngagedOnGenerationLanguage(ref);
-    }
-    for (SModuleReference ref : loadModuleRefList(is)) {
-      myModelData.addDevKit(ref);
-    }
-
-    for (ImportElement imp : loadImports(is)) myModelData.addModelImport(imp);
-
-    assertSyncToken(is, MODEL_START);
-
-    return readHelper;
   }
 
   private IdInfoRegistry saveModelProperties(ModelOutputStream os) throws IOException {
@@ -367,55 +346,6 @@ public final class BinaryPersistence {
     return metaInfo;
   }
 
-  private ReadHelper loadRegistry(ModelInputStream is) throws IOException {
-    assertSyncToken(is, REGISTRY_START);
-    // see #saveRegistry, we use position of an element in persistence as its index
-    int langIndex, conceptIndex, propertyIndex, associationIndex, aggregationIndex;
-    langIndex = conceptIndex = propertyIndex = associationIndex = aggregationIndex = 0;
-
-    ReadHelper rh = new ReadHelper(myMetaInfoProvider);
-
-    int langCount = is.readShort();
-    while (langCount-- > 0) {
-      final SLanguageId languageId = new SLanguageId(is.readUUID());
-      final String langName = is.readString();
-      rh.withLanguage(languageId, langName, langIndex++);
-      //
-      int conceptCount = is.readShort();
-      while (conceptCount-- > 0) {
-        final SConceptId conceptId = new SConceptId(languageId, is.readLong());
-        final String conceptName = NameUtil.conceptFQNameFromNamespaceAndShortName(langName, is.readString());
-        int flags = is.readByte();
-        int stubToken = is.readByte();
-        final SConceptId stubId;
-        if (stubToken == STUB_NONE) {
-          stubId = null;
-        } else {
-          assert stubToken == STUB_ID;
-          stubId = new SConceptId(languageId, is.readLong());
-        }
-        rh.withConcept(conceptId, conceptName, StaticScope.values()[flags & 0x0f], ConceptKind.values()[flags >> 4 & 0x0f], stubId, conceptIndex++);
-        //
-        int propertyCount = is.readShort();
-        while (propertyCount-- > 0) {
-          rh.property(new SPropertyId(conceptId, is.readLong()), is.readString(), propertyIndex++);
-        }
-        //
-        int associationCount = is.readShort();
-        while (associationCount-- > 0) {
-          rh.association(new SReferenceLinkId(conceptId, is.readLong()), is.readString(), associationIndex++);
-        }
-        //
-        int aggregationCount = is.readShort();
-        while (aggregationCount-- > 0) {
-          rh.aggregation(new SContainmentLinkId(conceptId, is.readLong()), is.readString(), is.readBoolean(), aggregationIndex++);
-        }
-      }
-    }
-    assertSyncToken(is, REGISTRY_END);
-    return rh;
-  }
-
   private void saveUsedLanguages(ModelOutputStream os) throws IOException {
     Collection<SLanguage> refs = myModelData.usedLanguages();
     os.writeShort(refs.size());
@@ -477,15 +407,7 @@ public final class BinaryPersistence {
       SModelHeader modelHeader = loadHeader(mis);
       SModel model = new DefaultSModel(modelHeader.getModelReference(), modelHeader);
       BinaryPersistence bp = new BinaryPersistence(new StuffedMetaModelInfo(new BaseMetaModelInfo()), model);
-      final ReadHelper readHelper = bp.loadModelProperties(mis);
-      for (ImportElement element : model.importedModels()) {
-        consumer.imports(element.getModelReference());
-      }
-      for (SConceptId cid : readHelper.getParticipatingConcepts()) {
-        consumer.instances(cid);
-      }
-      readHelper.requestInterfaceOnly(false);
-      final NodesReader reader = new NodesReader(modelHeader.getModelReference(), mis, readHelper);
+      final NodesReader reader = new NodesReader(modelHeader.getModelReference(), mis);
       HashSet<SNodeId> externalNodes = new HashSet<SNodeId>();
       HashSet<SNodeId> localNodes = new HashSet<SNodeId>();
       reader.collectExternalTargets(externalNodes);

@@ -48,7 +48,7 @@ import java.util.Map;
 /**
  * evgeny, 11/20/12
  */
-public class BinaryModelPersistence implements ApplicationComponent, ModelFactory, IndexAwareModelFactory {
+public class Neo4JModelPersistence implements ApplicationComponent, ModelFactory, IndexAwareModelFactory {
   private static final String MODEL_NEO4J = "neo4j";
 
   @NotNull
@@ -71,7 +71,7 @@ public class BinaryModelPersistence implements ApplicationComponent, ModelFactor
     if (Boolean.parseBoolean(options.get(MetaModelInfoProvider.OPTION_KEEP_READ_METAINFO))) {
       binaryModelHeader.setMetaInfoProvider(new StuffedMetaModelInfo(new RegularMetaModelInfo(binaryModelHeader.getModelReference())));
     }
-    return new DefaultSModelDescriptor(new PersistenceFacility(this, source), binaryModelHeader);
+    return new DefaultSModelDescriptor(new Neo4JFacility(this, source), binaryModelHeader);
   }
 
   @NotNull
@@ -93,7 +93,7 @@ public class BinaryModelPersistence implements ApplicationComponent, ModelFactor
 
     final SModelHeader header = new SModelHeader();
     header.setModelReference(PersistenceFacade.getInstance().createModelReference(null, jetbrains.mps.smodel.SModelId.generate(), modelName));
-    return new DefaultSModelDescriptor(new PersistenceFacility(this, source), header);
+    return new DefaultSModelDescriptor(new Neo4JFacility(this, source), header);
   }
 
   @Override
@@ -166,8 +166,8 @@ public class BinaryModelPersistence implements ApplicationComponent, ModelFactor
    */
   public static SModel createFromHeader(@NotNull SModelHeader header, @NotNull StreamDataSource dataSource) {
     final ModelFactory modelFactory = PersistenceFacade.getInstance().getModelFactory(MPSExtentions.MODEL_BINARY);
-    assert modelFactory instanceof BinaryModelPersistence;
-    return new DefaultSModelDescriptor(new PersistenceFacility((BinaryModelPersistence) modelFactory, dataSource), header.createCopy());
+    assert modelFactory instanceof Neo4JModelPersistence;
+    return new DefaultSModelDescriptor(new Neo4JFacility((Neo4JModelPersistence) modelFactory, dataSource), header.createCopy());
   }
 
   @NotNull
@@ -186,8 +186,8 @@ public class BinaryModelPersistence implements ApplicationComponent, ModelFactor
     PersistenceFacade.getInstance().setModelFactory(MODEL_NEO4J, null);
   }
 
-  private static class PersistenceFacility extends LazyLoadFacility {
-    /*package*/ PersistenceFacility(BinaryModelPersistence modelFactory, StreamDataSource dataSource) {
+  private static class Neo4JFacility extends LazyLoadFacility {
+    /*package*/ Neo4JFacility(Neo4JModelPersistence modelFactory, StreamDataSource dataSource) {
       super(modelFactory, dataSource);
     }
 
@@ -202,7 +202,7 @@ public class BinaryModelPersistence implements ApplicationComponent, ModelFactor
       Map<String, String> generationHashes = ModelDigestHelper.getInstance().getGenerationHashes(getSource());
       if (generationHashes != null) return generationHashes;
 
-      return BinaryModelPersistence.getDigestMap(getSource());
+      return Neo4JModelPersistence.getDigestMap(getSource());
     }
 
     @NotNull

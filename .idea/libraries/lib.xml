@@ -4,7 +4,60 @@
       <root url="file://$PROJECT_DIR$/../MPS/build/artifacts/mpsBootstrapCore/lib" />
     </CLASSES>
     <JAVADOC />
-    <SOURCES />
+    <SOURCES>
+      <root url="file://$PROJECT_DIR$/../MPS/core/analyzers/solutions/jetbrains.mps.analyzers.runtime/source_gen" />
+      <root url="file://$PROJECT_DIR$/../MPS/core/analyzers/solutions/sandbox/source_gen" />
+      <root url="file://$PROJECT_DIR$/../MPS/core/aspects/behavior/behavior-api/source" />
+      <root url="file://$PROJECT_DIR$/../MPS/core/aspects/behavior/behavior-legacy-api/source" />
+      <root url="file://$PROJECT_DIR$/../MPS/core/aspects/behavior/behavior-runtime/source" />
+      <root url="file://$PROJECT_DIR$/../MPS/core/components/source" />
+      <root url="file://$PROJECT_DIR$/../MPS/core/findUsages-runtime/source" />
+      <root url="file://$PROJECT_DIR$/../MPS/core/findUsages-runtime/source_gen" />
+      <root url="file://$PROJECT_DIR$/../MPS/core/generator/solutions/traceInfo/util/source_gen" />
+      <root url="file://$PROJECT_DIR$/../MPS/core/generator/source" />
+      <root url="file://$PROJECT_DIR$/../MPS/core/generator/source_gen" />
+      <root url="file://$PROJECT_DIR$/../MPS/core/generator/test" />
+      <root url="file://$PROJECT_DIR$/../MPS/core/java-stub/source" />
+      <root url="file://$PROJECT_DIR$/../MPS/core/java-stub/source_gen" />
+      <root url="file://$PROJECT_DIR$/../MPS/core/java-stub/test" />
+      <root url="file://$PROJECT_DIR$/../MPS/core/kernel/dataFlowRuntime/source" />
+      <root url="file://$PROJECT_DIR$/../MPS/core/kernel/dataFlowRuntime/source_gen" />
+      <root url="file://$PROJECT_DIR$/../MPS/core/kernel/dataFlowRuntime/test" />
+      <root url="file://$PROJECT_DIR$/../MPS/core/kernel/jetbrains.mps.debug.api.info/source" />
+      <root url="file://$PROJECT_DIR$/../MPS/core/kernel/patternRuntime/source" />
+      <root url="file://$PROJECT_DIR$/../MPS/core/kernel/patternRuntime/source_gen" />
+      <root url="file://$PROJECT_DIR$/../MPS/core/kernel/resources/source_gen" />
+      <root url="file://$PROJECT_DIR$/../MPS/core/kernel/smodelRuntime/source_gen" />
+      <root url="file://$PROJECT_DIR$/../MPS/core/kernel/source" />
+      <root url="file://$PROJECT_DIR$/../MPS/core/kernel/source_gen" />
+      <root url="file://$PROJECT_DIR$/../MPS/core/kernel/tests" />
+      <root url="file://$PROJECT_DIR$/../MPS/core/make-runtime/solutions/jetbrains.mps.make.facets/source_gen" />
+      <root url="file://$PROJECT_DIR$/../MPS/core/make-runtime/solutions/jetbrains.mps.make.runtime/source_gen" />
+      <root url="file://$PROJECT_DIR$/../MPS/core/make-runtime/solutions/jetbrains.mps.make/source_gen" />
+      <root url="file://$PROJECT_DIR$/../MPS/core/make-runtime/source" />
+      <root url="file://$PROJECT_DIR$/../MPS/core/make-runtime/test" />
+      <root url="file://$PROJECT_DIR$/../MPS/core/migration-runtime/source" />
+      <root url="file://$PROJECT_DIR$/../MPS/core/migration-runtime/source_gen" />
+      <root url="file://$PROJECT_DIR$/../MPS/core/migration/source" />
+      <root url="file://$PROJECT_DIR$/../MPS/core/mps-core/source" />
+      <root url="file://$PROJECT_DIR$/../MPS/core/openapi/source" />
+      <root url="file://$PROJECT_DIR$/../MPS/core/persistence/source" />
+      <root url="file://$PROJECT_DIR$/../MPS/core/persistence/source_gen" />
+      <root url="file://$PROJECT_DIR$/../MPS/core/project/source" />
+      <root url="file://$PROJECT_DIR$/../MPS/core/refactoring-runtime/source_gen" />
+      <root url="file://$PROJECT_DIR$/../MPS/core/scripts-runtime/source" />
+      <root url="file://$PROJECT_DIR$/../MPS/core/smodel/source" />
+      <root url="file://$PROJECT_DIR$/../MPS/core/squery-runtime/source_gen" />
+      <root url="file://$PROJECT_DIR$/../MPS/core/textgen/source" />
+      <root url="file://$PROJECT_DIR$/../MPS/core/textgen/test" />
+      <root url="file://$PROJECT_DIR$/../MPS/core/tool/ant/source_gen" />
+      <root url="file://$PROJECT_DIR$/../MPS/core/tool/builder/source_gen" />
+      <root url="file://$PROJECT_DIR$/../MPS/core/tool/common/source_gen" />
+      <root url="file://$PROJECT_DIR$/../MPS/core/tool/common/tests" />
+      <root url="file://$PROJECT_DIR$/../MPS/core/tool/environment/source_gen" />
+      <root url="file://$PROJECT_DIR$/../MPS/core/typesystemEngine/source" />
+      <root url="file://$PROJECT_DIR$/../MPS/core/typesystemEngine/source_gen" />
+    </SOURCES>
     <jarDirectory url="file://$PROJECT_DIR$/../MPS/build/artifacts/mpsBootstrapCore/lib" recursive="false" />
   </library>
 </component>
