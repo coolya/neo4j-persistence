@@ -32,20 +32,13 @@ import jetbrains.mps.persistence.registry.PropertyInfo;
 import jetbrains.mps.smodel.DefaultSModel;
 import jetbrains.mps.smodel.SModel;
 import jetbrains.mps.smodel.SModelHeader;
-import jetbrains.mps.smodel.SModelLegacy;
 import jetbrains.mps.smodel.adapter.ids.MetaIdHelper;
-import jetbrains.mps.smodel.adapter.ids.SConceptId;
-import jetbrains.mps.smodel.adapter.ids.SContainmentLinkId;
 import jetbrains.mps.smodel.adapter.ids.SLanguageId;
-import jetbrains.mps.smodel.adapter.ids.SPropertyId;
-import jetbrains.mps.smodel.adapter.ids.SReferenceLinkId;
 import jetbrains.mps.smodel.adapter.structure.MetaAdapterFactory;
 import jetbrains.mps.smodel.loading.ModelLoadResult;
 import jetbrains.mps.smodel.loading.ModelLoadingState;
 import jetbrains.mps.smodel.persistence.def.ModelReadException;
 import jetbrains.mps.smodel.persistence.def.v9.IdInfoCollector;
-import jetbrains.mps.smodel.runtime.ConceptKind;
-import jetbrains.mps.smodel.runtime.StaticScope;
 import jetbrains.mps.util.FileUtil;
 import jetbrains.mps.util.IterableUtil;
 import jetbrains.mps.util.NameUtil;
@@ -78,7 +71,7 @@ import static jetbrains.mps.smodel.SModel.ImportElement;
  * @author evgeny, 11/21/12
  * @author Artem Tikhomirov
  */
-public final class BinaryPersistence {
+public final class Neo4JPersistence {
 
   private final MetaModelInfoProvider myMetaInfoProvider;
   private final SModel myModelData;
@@ -130,7 +123,7 @@ public final class BinaryPersistence {
     IdInfoRegistry meta = null;
     DigestBuilderOutputStream os = ModelDigestUtil.createDigestBuilderOutputStream();
     try {
-      BinaryPersistence bp = new BinaryPersistence(mmiProvider == null ? new RegularMetaModelInfo(model.getReference()) : mmiProvider, model);
+      Neo4JPersistence bp = new Neo4JPersistence(mmiProvider == null ? new RegularMetaModelInfo(model.getReference()) : mmiProvider, model);
       ModelOutputStream mos = new ModelOutputStream(os);
       meta = bp.saveModelProperties(mos);
       mos.flush();
@@ -222,7 +215,7 @@ public final class BinaryPersistence {
       SModelHeader modelHeader = loadHeader(mis);
 
       DefaultSModel model = new DefaultSModel(modelHeader.getModelReference(), modelHeader);
-      BinaryPersistence bp = new BinaryPersistence(mmiProvider == null ? new RegularMetaModelInfo(modelHeader.getModelReference()) : mmiProvider, model);
+      Neo4JPersistence bp = new Neo4JPersistence(mmiProvider == null ? new RegularMetaModelInfo(modelHeader.getModelReference()) : mmiProvider, model);
 
 
       NodesReader reader = new NodesReader(modelHeader.getModelReference(), mis);
@@ -240,14 +233,14 @@ public final class BinaryPersistence {
     } else {
       mmiProvider = new RegularMetaModelInfo(model.getReference());
     }
-    BinaryPersistence bp = new BinaryPersistence(mmiProvider, model);
+    Neo4JPersistence bp = new Neo4JPersistence(mmiProvider, model);
     IdInfoRegistry meta = bp.saveModelProperties(os);
 
     Collection<SNode> roots = IterableUtil.asCollection(model.getRootNodes());
     new NodesWriter(model.getReference(), os, meta).writeNodes(roots);
   }
 
-  private BinaryPersistence(@NotNull MetaModelInfoProvider mmiProvider, SModel modelData) {
+  private Neo4JPersistence(@NotNull MetaModelInfoProvider mmiProvider, SModel modelData) {
     myMetaInfoProvider = mmiProvider;
     myModelData = modelData;
   }
@@ -406,7 +399,7 @@ public final class BinaryPersistence {
       mis = new ModelInputStream(content);
       SModelHeader modelHeader = loadHeader(mis);
       SModel model = new DefaultSModel(modelHeader.getModelReference(), modelHeader);
-      BinaryPersistence bp = new BinaryPersistence(new StuffedMetaModelInfo(new BaseMetaModelInfo()), model);
+      Neo4JPersistence bp = new Neo4JPersistence(new StuffedMetaModelInfo(new BaseMetaModelInfo()), model);
       final NodesReader reader = new NodesReader(modelHeader.getModelReference(), mis);
       HashSet<SNodeId> externalNodes = new HashSet<SNodeId>();
       HashSet<SNodeId> localNodes = new HashSet<SNodeId>();

@@ -20,19 +20,18 @@ import jetbrains.mps.extapi.model.GeneratableSModel;
 import jetbrains.mps.extapi.model.SModelBase;
 import jetbrains.mps.extapi.model.SModelData;
 import jetbrains.mps.generator.ModelDigestUtil;
-import jetbrains.mps.persistence.IndexAwareModelFactory;
-import jetbrains.mps.persistence.LazyLoadFacility;
-import jetbrains.mps.persistence.MetaModelInfoProvider;
+import jetbrains.mps.logging.Logger;
+import jetbrains.mps.persistence.*;
 import jetbrains.mps.persistence.MetaModelInfoProvider.RegularMetaModelInfo;
 import jetbrains.mps.persistence.MetaModelInfoProvider.StuffedMetaModelInfo;
-import com.mbeddr.persistence.neo4j.BinaryPersistence;
-import jetbrains.mps.persistence.ModelDigestHelper;
+import com.mbeddr.persistence.neo4j.Neo4JPersistence;
 import jetbrains.mps.project.MPSExtentions;
 import jetbrains.mps.smodel.DefaultSModelDescriptor;
 import jetbrains.mps.smodel.SModelHeader;
 import jetbrains.mps.smodel.loading.ModelLoadResult;
 import jetbrains.mps.smodel.loading.ModelLoadingState;
 import jetbrains.mps.smodel.persistence.def.ModelReadException;
+import org.apache.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.mps.openapi.model.SModel;
 import org.jetbrains.mps.openapi.persistence.DataSource;
@@ -50,6 +49,7 @@ import java.util.Map;
  */
 public class Neo4JModelPersistence implements ApplicationComponent, ModelFactory, IndexAwareModelFactory {
   private static final String MODEL_NEO4J = "neo4j";
+  private static final Logger LOG = Logger.wrap(LogManager.getLogger(Neo4JModelPersistence.class));
 
   @NotNull
   @Override
@@ -58,10 +58,12 @@ public class Neo4JModelPersistence implements ApplicationComponent, ModelFactory
       throw new UnsupportedDataSourceException(dataSource);
     }
 
+    LOG.debug("loading model");
+
     StreamDataSource source = (StreamDataSource) dataSource;
-    SModelHeader binaryModelHeader;
+    SModelHeader header;
     try {
-      binaryModelHeader = BinaryPersistence.readHeader(source);
+      header = Neo4JPersistence.readHeader(source);
     } catch (ModelReadException e) {
       if (e.getCause() instanceof IOException) {
         throw (IOException) e.getCause();
@@ -69,9 +71,9 @@ public class Neo4JModelPersistence implements ApplicationComponent, ModelFactory
       throw new IOException(e.getMessageEx(), e);
     }
     if (Boolean.parseBoolean(options.get(MetaModelInfoProvider.OPTION_KEEP_READ_METAINFO))) {
-      binaryModelHeader.setMetaInfoProvider(new StuffedMetaModelInfo(new RegularMetaModelInfo(binaryModelHeader.getModelReference())));
+      header.setMetaInfoProvider(new StuffedMetaModelInfo(new RegularMetaModelInfo(header.getModelReference())));
     }
-    return new DefaultSModelDescriptor(new Neo4JFacility(this, source), binaryModelHeader);
+    return new DefaultSModelDescriptor(new Neo4JFacility(this, source), header);
   }
 
   @NotNull
@@ -80,6 +82,8 @@ public class Neo4JModelPersistence implements ApplicationComponent, ModelFactory
     if (!(dataSource instanceof StreamDataSource)) {
       throw new UnsupportedDataSourceException(dataSource);
     }
+
+    LOG.debug("Creating model");
 
     StreamDataSource source = (StreamDataSource) dataSource;
     String modelName = options.get(OPTION_MODELNAME);
@@ -116,7 +120,7 @@ public class Neo4JModelPersistence implements ApplicationComponent, ModelFactory
     if (!(dataSource instanceof StreamDataSource)) {
       throw new UnsupportedDataSourceException(dataSource);
     }
-    BinaryPersistence.writeModel(((SModelBase) model).getSModel(), (StreamDataSource) dataSource);
+    Neo4JPersistence.writeModel(((SModelBase) model).getSModel(), (StreamDataSource) dataSource);
   }
 
   @Override
@@ -126,25 +130,25 @@ public class Neo4JModelPersistence implements ApplicationComponent, ModelFactory
 
   @Override
   public String getFileExtension() {
-    return MPSExtentions.MODEL_BINARY;
+    return "neo4j";
   }
 
   @Override
   public String getFormatTitle() {
-    return "Universal binary format";
+    return "Neo4J persistence";
   }
 
   @Override
   public void index(@NotNull InputStream input, @NotNull Callback callback) throws IOException {
-    BinaryPersistence.index(input, callback);
+    Neo4JPersistence.index(input, callback);
   }
 
   public static Map<String, String> getDigestMap(@NotNull StreamDataSource source) {
     try {
-      SModelHeader binaryModelHeader = BinaryPersistence.readHeader(source);
+      SModelHeader binaryModelHeader = Neo4JPersistence.readHeader(source);
       binaryModelHeader.setMetaInfoProvider(new StuffedMetaModelInfo(new RegularMetaModelInfo(binaryModelHeader.getModelReference())));
-      final ModelLoadResult loadedModel = BinaryPersistence.readModel(binaryModelHeader, source, false);
-      Map<String, String> result = BinaryPersistence.getDigestMap(loadedModel.getModel(), binaryModelHeader.getMetaInfoProvider());
+      final ModelLoadResult loadedModel = Neo4JPersistence.readModel(binaryModelHeader, source, false);
+      Map<String, String> result = Neo4JPersistence.getDigestMap(loadedModel.getModel(), binaryModelHeader.getMetaInfoProvider());
       result.put(GeneratableSModel.FILE, ModelDigestUtil.hashBytes(source.openInputStream()));
       return result;
     } catch (ModelReadException ignored) {
@@ -178,11 +182,13 @@ public class Neo4JModelPersistence implements ApplicationComponent, ModelFactory
 
   @Override
   public void initComponent() {
+    LOG.debug("initComponent");
     PersistenceFacade.getInstance().setModelFactory(MODEL_NEO4J, this);
   }
 
   @Override
   public void disposeComponent() {
+    LOG.debug("disposeComponent");
     PersistenceFacade.getInstance().setModelFactory(MODEL_NEO4J, null);
   }
 
@@ -208,13 +214,13 @@ public class Neo4JModelPersistence implements ApplicationComponent, ModelFactory
     @NotNull
     @Override
     public SModelHeader readHeader() throws ModelReadException {
-      return BinaryPersistence.readHeader(getSource());
+      return Neo4JPersistence.readHeader(getSource());
     }
 
     @NotNull
     @Override
     public ModelLoadResult readModel(@NotNull SModelHeader header, @NotNull ModelLoadingState state) throws ModelReadException {
-      return BinaryPersistence.readModel(header, getSource(), state == ModelLoadingState.INTERFACE_LOADED);
+      return Neo4JPersistence.readModel(header, getSource(), state == ModelLoadingState.INTERFACE_LOADED);
     }
 
     @Override
@@ -225,7 +231,7 @@ public class Neo4JModelPersistence implements ApplicationComponent, ModelFactory
 
     @Override
     public void saveModel(@NotNull SModelHeader header, SModelData modelData) throws IOException {
-      BinaryPersistence.writeModel((jetbrains.mps.smodel.SModel) modelData, getSource());
+      Neo4JPersistence.writeModel((jetbrains.mps.smodel.SModel) modelData, getSource());
     }
   }
 }

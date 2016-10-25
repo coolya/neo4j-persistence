@@ -1,0 +1,11 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="neo4j-persistence">
+    <output-path>$PROJECT_DIR$/out/artifacts/neo4j_persistence</output-path>
+    <root id="archive" name="neo4j-persistence.jar">
+      <element id="module-output" name="neo4j-persistence" />
+      <element id="directory" name="META-INF">
+        <element id="dir-copy" path="$PROJECT_DIR$/META-INF" />
+      </element>
+    </root>
+  </artifact>
+</component>
