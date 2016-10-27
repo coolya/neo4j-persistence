@@ -35,6 +35,7 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 /**
  * Minimalistic binary persistence, straightforward, to serialize nodes individually.
@@ -54,41 +55,38 @@ public class BareNodeWriter {
   static final byte REF_OTHER_MODEL = 18;
 
   protected final SModelReference myModelReference;
-  protected final ModelOutputStream myOut;
 
-  public BareNodeWriter(@NotNull SModelReference modelReference, @NotNull ModelOutputStream os) {
+  public BareNodeWriter(@NotNull SModelReference modelReference) {
     myModelReference = modelReference;
-    myOut = os;
   }
 
-  public void writeNodes(Collection<SNode> nodes) throws IOException {
-    myOut.writeInt(nodes.size());
+  public List<CypherRecord> writeNodes(Collection<SNode> nodes) throws IOException {
+    ArrayList<CypherRecord> cypherRecords = new ArrayList<CypherRecord>();
     for (SNode n : nodes) {
-      writeNode(n);
+      cypherRecords.add(writeNode(n));
     }
+    return cypherRecords;
   }
 
-  public final void writeNode(SNode node) throws IOException {
-    writeNodePrim(node);
+  public final CypherRecord writeNode(SNode node) throws IOException {
+    CypherRecord cypherRecord = new CypherRecord("SNode");
 
-    myOut.writeByte('{');
+    cypherRecord.addConcept("concept", node.getConcept());
+    cypherRecord.addNodeId("id", node.getNodeId());
+
+    for (SProperty sProperty : node.getProperties()) {
+
+    }
+
 
     writeProperties(node);
-
     writeUserObjects(node);
 
-    writeReferences(node);
-
-    writeNodes(IterableUtil.asCollection(node.getChildren()));
-
-    myOut.writeByte('}');
+    //writeReferences(node);
+    //writeNodes(IterableUtil.asCollection(node.getChildren()));
+    return cypherRecord;
   }
 
-  protected void writeNodePrim(SNode node) throws IOException {
-    myOut.writeConcept(node.getConcept());
-    myOut.writeNodeId(node.getNodeId());
-    myOut.writeContainmentLink(node.getContainmentLink());
-  }
 
   protected void writeReferences(SNode node) throws IOException {
     final Collection<SReference> refs = IterableUtil.asCollection(node.getReferences());

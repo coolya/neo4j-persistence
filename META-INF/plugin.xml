@@ -18,17 +18,10 @@
 
     </application-components>
 
-    <extensionPoints>
-        <extensionPoint qualifiedName="com.intellij.mps.modelRootEntry" beanClass="jetbrains.mps.ide.ui.dialogs.properties.persistence.ModelRootEntryEP"/>
-        <extensionPoint qualifiedName="com.intellij.mps.modelRootFactory"
-                        beanClass="jetbrains.mps.ide.persistence.ModelRootFactoryEP"/>
-        <extensionPoint qualifiedName="com.intellij.mps.modelRootSettings"
-                        beanClass="jetbrains.mps.ide.persistence.ModelRootSettingsEP"/>
-    </extensionPoints>
     <extensions defaultExtensionNs="com.intellij">
-        <mps.modelRootFactory rootType="java_source_stubs" className="com.mbeddr.modelroot.neo4j.Neo4JModelRootFactory"/>
-        <!-- <mps.modelRootSettings rootType="java_source_stubs" className="jetbrains.mps.ide.java.sourceStubsUI.JavaSourceStubModelRootSettingsProvider"/>-->
-        <mps.modelRootEntry rootType="java_source_stubs" className="com.mbeddr.modelroot.neo4j.Neo4JModelRootEntryFactory"/>
+        <mps.modelRootFactory rootType="neo4j" className="com.mbeddr.modelroot.neo4j.Neo4JModelRootFactory"/>
+        <!-- <mps.modelRootSettings rootType="neo4j" className="jetbrains.mps.ide.java.sourceStubsUI.JavaSourceStubModelRootSettingsProvider"/>-->
+        <mps.modelRootEntry rootType="neo4j" className="com.mbeddr.modelroot.neo4j.Neo4JModelRootEntryFactory"/>
     </extensions>
 
 </idea-plugin>

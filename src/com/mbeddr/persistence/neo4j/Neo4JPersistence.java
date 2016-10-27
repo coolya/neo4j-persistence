@@ -29,6 +29,7 @@ import jetbrains.mps.persistence.registry.ConceptInfo;
 import jetbrains.mps.persistence.registry.IdInfoRegistry;
 import jetbrains.mps.persistence.registry.LangInfo;
 import jetbrains.mps.persistence.registry.PropertyInfo;
+import jetbrains.mps.project.ModuleId;
 import jetbrains.mps.smodel.DefaultSModel;
 import jetbrains.mps.smodel.SModel;
 import jetbrains.mps.smodel.SModelHeader;
@@ -47,9 +48,11 @@ import jetbrains.mps.util.io.ModelOutputStream;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.mps.openapi.language.SLanguage;
+import org.jetbrains.mps.openapi.model.SModelId;
 import org.jetbrains.mps.openapi.model.SModelReference;
 import org.jetbrains.mps.openapi.model.SNode;
 import org.jetbrains.mps.openapi.model.SNodeId;
+import org.jetbrains.mps.openapi.module.SModuleId;
 import org.jetbrains.mps.openapi.module.SModuleReference;
 import org.jetbrains.mps.openapi.persistence.StreamDataSource;
 
@@ -106,16 +109,10 @@ public final class Neo4JPersistence {
     if (dataSource.isReadOnly()) {
       throw new IOException(String.format("`%s' is read-only", dataSource.getLocation()));
     }
-    writeModel(model, dataSource.openOutputStream());
+    writeModel(model);
   }
-  public static void writeModel(@NotNull SModel model, @NotNull OutputStream stream) throws IOException {
-    ModelOutputStream os = null;
-    try {
-      os = new ModelOutputStream(stream);
-      saveModel(model, os);
-    } finally {
-      FileUtil.closeFileSafe(os);
-    }
+  public static void writeModel(@NotNull SModel model) throws IOException {
+      saveModel(model);
   }
 
   public static Map<String, String> getDigestMap(jetbrains.mps.smodel.SModel model, @Nullable MetaModelInfoProvider mmiProvider) {
@@ -226,7 +223,7 @@ public final class Neo4JPersistence {
     }
   }
 
-  private static void saveModel(SModel model, ModelOutputStream os) throws IOException {
+  private static void saveModel(SModel model) throws IOException {
     final MetaModelInfoProvider mmiProvider;
     if (model instanceof DefaultSModel && ((DefaultSModel) model).getSModelHeader().getMetaInfoProvider() != null) {
       mmiProvider = ((DefaultSModel) model).getSModelHeader().getMetaInfoProvider();
@@ -234,10 +231,10 @@ public final class Neo4JPersistence {
       mmiProvider = new RegularMetaModelInfo(model.getReference());
     }
     Neo4JPersistence bp = new Neo4JPersistence(mmiProvider, model);
-    IdInfoRegistry meta = bp.saveModelProperties(os);
+    CypherRecord record = bp.saveModelProperties();
 
     Collection<SNode> roots = IterableUtil.asCollection(model.getRootNodes());
-    new NodesWriter(model.getReference(), os, meta).writeNodes(roots);
+    new NodesWriter(model.getReference()).writeNodes(roots);
   }
 
   private Neo4JPersistence(@NotNull MetaModelInfoProvider mmiProvider, SModel modelData) {
@@ -245,152 +242,41 @@ public final class Neo4JPersistence {
     myModelData = modelData;
   }
 
-  private IdInfoRegistry saveModelProperties(ModelOutputStream os) throws IOException {
+
+  private CypherRecord saveModelProperties() throws IOException {
     // header
-    os.writeInt(HEADER_START);
-    os.writeInt(STREAM_ID);
-    os.writeModelReference(myModelData.getReference());
-    os.writeInt(-1);  //old model version
+    CypherRecord record = new CypherRecord("SModel");
+
+
+    SModelReference reference = myModelData.getReference();
+
+    writeModelReference(record, reference);
     if (myModelData instanceof DefaultSModel) {
-      os.writeByte(HEADER_ATTRIBUTES);
       SModelHeader mh = ((DefaultSModel) myModelData).getSModelHeader();
-      os.writeBoolean(mh.isDoNotGenerate());
+      record.addBoolean("DoNotGenerate", mh.isDoNotGenerate());
       Map<String, String> props = new HashMap<String, String>(mh.getOptionalProperties());
-      os.writeShort(props.size());
-      for (Entry<String, String> e : props.entrySet()) {
-        os.writeString(e.getKey());
-        os.writeString(e.getValue());
-      }
+      record.addMap("props", props);
     }
-    os.writeInt(HEADER_END);
 
-    final IdInfoRegistry rv = saveRegistry(os);
-
-    //languages
-    saveUsedLanguages(os);
-    saveModuleRefList(myModelData.engagedOnGenerationLanguages(), os);
-    saveModuleRefList(myModelData.importedDevkits(), os);
-
-    // imports
-    saveImports(myModelData.importedModels(), os);
-    // no need to save implicit imports as we serialize them ad-hoc, the moment we find external reference from a node
-
-    os.writeInt(MODEL_START);
-    return rv;
+    return record;
   }
 
-  private IdInfoRegistry saveRegistry(ModelOutputStream os) throws IOException {
-    os.writeInt(REGISTRY_START);
-    IdInfoRegistry metaInfo = new IdInfoRegistry();
-    new IdInfoCollector(metaInfo, myMetaInfoProvider).fill(myModelData.getRootNodes());
-    List<LangInfo> languagesInUse = metaInfo.getLanguagesInUse();
-    os.writeShort(languagesInUse.size());
-    // We use position of an element during persistence as its index, thus don't need to
-    // keep the index value - can restore it during read
-    int langIndex, conceptIndex, propertyIndex, associationIndex, aggregationIndex;
-    langIndex = conceptIndex = propertyIndex = associationIndex = aggregationIndex = 0;
-    for(LangInfo ul : languagesInUse) {
-      os.writeUUID(ul.getLanguageId().getIdValue());
-      os.writeString(ul.getName());
-      ul.setIntIndex(langIndex++);
-      //
-      List<ConceptInfo> conceptsInUse = ul.getConceptsInUse();
-      os.writeShort(conceptsInUse.size());
-      for (ConceptInfo ci : conceptsInUse) {
-        os.writeLong(ci.getConceptId().getIdValue());
-        assert ul.getName().equals(NameUtil.namespaceFromConceptFQName(ci.getName())) : "We save concept short name. This check ensures we can re-construct fqn based on language name";
-        os.writeString(ci.getBriefName());
-        os.writeByte(ci.getKind().ordinal() << 4 | ci.getScope().ordinal());
-        if (ci.isImplementationWithStub()) {
-          os.writeByte(STUB_ID);
-          os.writeLong(ci.getStubCounterpart().getIdValue());
-        } else {
-          os.writeByte(STUB_NONE);
-        }
-        ci.setIntIndex(conceptIndex++);
-        //
-        List<PropertyInfo> propertiesInUse = ci.getPropertiesInUse();
-        os.writeShort(propertiesInUse.size());
-        for(PropertyInfo pi : propertiesInUse) {
-          os.writeLong(pi.getPropertyId().getIdValue());
-          os.writeString(pi.getName());
-          pi.setIntIndex(propertyIndex++);
-        }
-        //
-        List<AssociationLinkInfo> associationsInUse = ci.getAssociationsInUse();
-        os.writeShort(associationsInUse.size());
-        for (AssociationLinkInfo li : associationsInUse) {
-          os.writeLong(li.getLinkId().getIdValue());
-          os.writeString(li.getName());
-          li.setIntIndex(associationIndex++);
-        }
-        //
-        List<AggregationLinkInfo> aggregationsInUse = ci.getAggregationsInUse();
-        os.writeShort(aggregationsInUse.size());
-        for (AggregationLinkInfo li : aggregationsInUse) {
-          os.writeLong(li.getLinkId().getIdValue());
-          os.writeString(li.getName());
-          os.writeBoolean(li.isUnordered());
-          li.setIntIndex(aggregationIndex++);
-        }
-      }
+  private void writeModelReference(CypherRecord record, SModelReference reference) {
+    record.addString("Name",reference.getModelName());
+    SModelId modelId = reference.getModelId();
+    if(modelId instanceof jetbrains.mps.smodel.SModelId.RegularSModelId) {
+      record.addString("Id", ((jetbrains.mps.smodel.SModelId.RegularSModelId) modelId).getId().toString());
+    } else {
+      throw new UnsupportedOperationException("Can't serialise Ids of type " + modelId.getClass().getCanonicalName());
     }
-    os.writeInt(REGISTRY_END);
-    return metaInfo;
-  }
-
-  private void saveUsedLanguages(ModelOutputStream os) throws IOException {
-    Collection<SLanguage> refs = myModelData.usedLanguages();
-    os.writeShort(refs.size());
-    for (SLanguage l : refs) {
-      // id, name, version
-      os.writeUUID(MetaIdHelper.getLanguage(l).getIdValue());
-      os.writeString(l.getQualifiedName());
+    SModuleReference moduleReference = reference.getModuleReference();
+    record.addString("ModuleName", moduleReference.getModuleName());
+    SModuleId moduleId = moduleReference.getModuleId();
+    if(moduleId instanceof ModuleId.Regular) {
+      record.addString("ModuleId", ((ModuleId.Regular) moduleId).getUUID().toString());
+    } else {
+      throw new UnsupportedOperationException("Can't save id of type " + moduleId.getClass().getCanonicalName());
     }
-  }
-
-  private void loadUsedLanguages(ModelInputStream is) throws IOException {
-    int size = is.readShort();
-    for (int i = 0; i < size; i++) {
-      SLanguageId id = new SLanguageId(is.readUUID());
-      String name = is.readString();
-      SLanguage l = MetaAdapterFactory.getLanguage(id, name);
-      myModelData.addLanguage(l);
-    }
-  }
-
-  private static void saveModuleRefList(Collection<SModuleReference> refs, ModelOutputStream os) throws IOException {
-    os.writeShort(refs.size());
-    for (SModuleReference ref : refs) {
-      os.writeModuleReference(ref);
-    }
-  }
-
-  private static Collection<SModuleReference> loadModuleRefList(ModelInputStream is) throws IOException {
-    int size = is.readShort();
-    List<SModuleReference> result = new ArrayList<SModuleReference>(size);
-    for (int i = 0; i < size; i++) {
-      result.add(is.readModuleReference());
-    }
-    return result;
-  }
-
-  private static void saveImports(Collection<ImportElement> elements, ModelOutputStream os) throws IOException {
-    os.writeInt(elements.size());
-    for (ImportElement element : elements) {
-      os.writeModelReference(element.getModelReference());
-      os.writeInt(element.getUsedVersion());
-    }
-  }
-
-  private static List<ImportElement> loadImports(ModelInputStream is) throws IOException {
-    int size = is.readInt();
-    List<ImportElement> result = new ArrayList<ImportElement>();
-    for (int i = 0; i < size; i++) {
-      SModelReference ref = is.readModelReference();
-      result.add(new ImportElement(ref, -1, is.readInt()));
-    }
-    return result;
   }
 
   public static void index(InputStream content, final Callback consumer) throws IOException {
