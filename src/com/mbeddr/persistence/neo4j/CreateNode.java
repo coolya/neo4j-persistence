@@ -1,6 +1,5 @@
 package com.mbeddr.persistence.neo4j;
 
-import jetbrains.mps.project.ModuleId;
 import jetbrains.mps.smodel.adapter.ids.MetaIdHelper;
 import jetbrains.mps.smodel.adapter.ids.SConceptId;
 import org.jetbrains.mps.openapi.language.SConcept;
@@ -8,22 +7,22 @@ import org.jetbrains.mps.openapi.model.SNodeId;
 import org.neo4j.driver.v1.Statement;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Created by kdummann on 26/10/2016.
  */
-public class CypherRecord {
+public class CreateNode implements CypherStatement{
     private String label;
     private final List<CypherAttribute> attributes = new ArrayList<CypherAttribute>();
 
-    public CypherRecord() {
+    public CreateNode() {
         this(null);
     }
 
-    public CypherRecord(String label) {
+    public CreateNode(String label) {
         this.label = label;
     }
 
@@ -44,24 +43,47 @@ public class CypherRecord {
     }
 
     public void addConcept(String key, SConcept value) {
-        HashMap<String, String> map = new HashMap<String, String>();
         SConceptId id = MetaIdHelper.getConcept(value);
-        map.put("langId", id.getLanguageId().getIdValue().toString());
-        map.put("id", String.valueOf(id.getIdValue()));
-        map.put("name", value.getQualifiedName());
-        addMap(key, map);
+        addString(key, id.serialize());
     }
 
-    public void addNodeId(String key, SNodeId nodeId) {
+    public void addNodeId(SNodeId nodeId) {
         if(nodeId instanceof jetbrains.mps.smodel.SNodeId.Regular)
         {
-            addInt(key, ((jetbrains.mps.smodel.SNodeId.Regular) nodeId).getId());
+            addInt("NodeId", ((jetbrains.mps.smodel.SNodeId.Regular) nodeId).getId());
         } else {
             throw new UnsupportedOperationException();
         }
     }
 
     public Statement toStatement() {
-        return null;
+        StringBuilder builder = new StringBuilder();
+
+        builder.append("CREATE (e");
+        if(this.label != null && !this.label.isEmpty()) {
+            builder.append(":" + label + " ");
+        }
+        builder.append("{ ");
+
+        boolean first = true;
+        for (CypherAttribute attr : attributes) {
+            if(!first) {
+                builder.append(",");
+            }
+            builder.append("`");
+            builder.append(attr.getKey());
+            builder.append("`");
+            builder.append(":");
+            builder.append("{`");
+            builder.append(attr.getKey());
+            builder.append("`}");
+            first = false;
+        }
+
+        builder.append("})");
+
+        return new Statement(builder.toString(), this.attributes
+                .stream()
+                .collect(Collectors.toMap(x ->  x.getKey(), CypherAttribute::getValue)));
     }
 }

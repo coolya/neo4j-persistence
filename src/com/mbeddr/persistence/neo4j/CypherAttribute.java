@@ -8,6 +8,14 @@ public class CypherAttribute {
     private final Object value;
     private final Type type;
 
+    public String getKey() {
+        return key;
+    }
+
+    public Object getValue() {
+        return value;
+    }
+
     public enum Type {
         STRING,
         INT,

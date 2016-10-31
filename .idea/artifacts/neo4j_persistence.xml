@@ -1,10 +1,17 @@
 <component name="ArtifactManager">
-  <artifact type="jar" name="neo4j-persistence">
+  <artifact name="neo4j-persistence">
     <output-path>$PROJECT_DIR$/out/artifacts/neo4j_persistence</output-path>
-    <root id="archive" name="neo4j-persistence.jar">
-      <element id="module-output" name="neo4j-persistence" />
-      <element id="directory" name="META-INF">
-        <element id="dir-copy" path="$PROJECT_DIR$/META-INF" />
+    <root id="root">
+      <element id="directory" name="neo4j-persistence">
+        <element id="directory" name="lib">
+          <element id="archive" name="neo4j-persistence.jar">
+            <element id="directory" name="META-INF">
+              <element id="file-copy" path="$PROJECT_DIR$/META-INF/plugin.xml" />
+            </element>
+            <element id="module-output" name="neo4j-persistence" />
+          </element>
+          <element id="library" level="project" name="org.neo4j.driver:neo4j-java-driver:1.0.6" />
+        </element>
       </element>
     </root>
   </artifact>
